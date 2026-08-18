@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grande Course des 15 Langages</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+        .track-container {
+            width: 100%;
+            max-width: 900px;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-top: 20px;
+        }
+        .lane {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            background: #0f172a;
+            border-radius: 6px;
+            padding: 6px 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .lang-name {
+            width: 130px;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 2;
+            text-transform: uppercase;
+        }
+        .track {
+            flex-grow: 1;
+            height: 25px;
+            background: #334155;
+            border-radius: 4px;
+            position: relative;
+            margin: 0 10px;
+        }
+        .runner {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            height: 21px;
+            width: 25px;
+            background: #38bdf8;
+            border-radius: 4px;
+            transition: left 0.1s linear;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 3;
+        }
+        .finish-line {
+            position: absolute;
+            right: 15px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #ef4444;
+            z-index: 1;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0ea5e9; }
+        #scoreboard {
+            margin-top: 20px;
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 900px;
+        }
+        #scoreboard h3 { margin-top: 0; color: #38bdf8; }
+        ol { margin: 0; padding-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Grande Course des 15 Langages de Programmation</h1>
+    <p>Regarde les 15 langages s'affronter en direct dans cette simulation HTML/JS intégrée !</p>
+    
+    <div class="controls">
+        <button onclick="startRace()">Lancer la Course</button>
+        <button onclick="resetRace()">Réinitialiser</button>
+    </div>
+
+    <div class="track-container" id="tracks">
+        <!-- Les pistes seront injectées ici -->
+    </div>
+
+    <div id="scoreboard" style="display:none;">
+        <h3>Classement Final</h3>
+        <ol id="ranking-list"></ol>
+    </div>
+
+    <script>
+        const languages = [
+            { name: "Python", color: "#3b82f6" },
+            { name: "C#", color: "#8b5cf6" },
+            { name: "JavaScript", color: "#facc15" },
+            { name: "C++", color: "#6366f1" },
+            { name: "Java", color: "#f97316" },
+            { name: "Ruby", color: "#ef4444" },
+            { name: "Go", color: "#06b6d4" },
+            { name: "Rust", color: "#ea580c" },
+            { name: "PHP", color: "#a855f7" },
+            { name: "Swift", color: "#fb923c" },
+            { name: "Kotlin", color: "#a3e635" },
+            { name: "TypeScript", color: "#2563eb" },
+            { name: "Perl", color: "#64748b" },
+            { name: "Scala", color: "#dc2626" },
+            { name: "Lua", color: "#38bdf8" }
+        ];
+
+        let racers = [];
+        let raceInterval = null;
+        let finishedCount = 0;
+        let rankings = [];
+
+        function initTracks() {
+            const container = document.getElementById('tracks');
+            container.innerHTML = '';
+            rankings = [];
+            finishedCount = 0;
+            document.getElementById('scoreboard').style.display = 'none';
+            
+            racers = languages.map((lang, index) => ({
+                id: index,
+                name: lang.name,
+                color: lang.color,
+                progress: 0,
+                finished: false
+            }));
+
+            racers.forEach((racer, index) => {
+                const lane = document.createElement('div');
+                lane.className = 'lane';
+                lane.innerHTML = `
+                    <div class="lang-name" style="color: ${racer.color}">${racer.name}</div>
+                    <div class="track">
+                        <div class="finish-line"></div>
+                        <div class="runner" id="runner-${index}" style="background: ${racer.color}">🚀</div>
+                    </div>
+                `;
+                container.appendChild(lane);
+            });
+        }
+
+        function startRace() {
+            if (raceInterval) clearInterval(raceInterval);
+            initTracks();
+            
+            raceInterval = setInterval(() => {
+                let allFinished = true;
+                
+                racers.forEach((racer, index) => {
+                    if (!racer.finished) {
+                        allFinished = false;
+                        // Avancement aléatoire avec un boost de vitesse variable
+                        racer.progress += Math.random() * 4;
+                        
+                        if (racer.progress >= 92) {
+                            racer.progress = 92;
+                            racer.finished = true;
+                            rankings.push(racer.name);
+                            finishedCount++;
+                        }
+                        
+                        const elem = document.getElementById(`runner-${index}`);
+                        if (elem) {
+                            elem.style.left = racer.progress + '%';
+                        }
+                    }
+                });
+
+                if (allFinished || finishedCount === racers.length) {
+                    clearInterval(raceInterval);
+                    showScoreboard();
+                }
+            }, 50);
+        }
+
+        function resetRace() {
+            if (raceInterval) clearInterval(raceInterval);
+            initTracks();
+        }
+
+        function showScoreboard() {
+            const scoreDiv = document.getElementById('scoreboard');
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = '';
+            
+            rankings.forEach((name, idx) => {
+                const li = document.createElement('li');
+                li.textContent = `${name} (${idx + 1}er position)`;
+                list.appendChild(li);
+            });
+            scoreDiv.style.display = 'block';
+        }
+
+        window.onload = initTracks;
+    </script>
+</body>
+</html>
